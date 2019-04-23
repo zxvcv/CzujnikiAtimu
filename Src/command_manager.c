@@ -84,7 +84,9 @@ void parse_command(CommandProperties* CmdPrt)
 
 void send_msg_UART()
 {
-	uint8_t out_data_size = snprintf((char*)ComData.out_data,  OUT_BUFF_SIZE, "%s%c", ListStr_Front(ComData.out_commands), '\0');
+	uint8_t out_data_size = snprintf((char*)ComData.out_data,  OUT_BUFF_SIZE, "%s%c%c", ListStr_Front(ComData.out_commands), '\r', '\n');
+	ComData.out_data[OUT_BUFF_SIZE - 3] = '\r';
+	ComData.out_data[OUT_BUFF_SIZE - 2] = '\n';
 	ComData.out_data[OUT_BUFF_SIZE - 1] = '\0';
 	out_data_size = out_data_size < OUT_BUFF_SIZE ? out_data_size : OUT_BUFF_SIZE;
 	HAL_UART_Transmit_IT(&huart2, ComData.out_data, out_data_size);

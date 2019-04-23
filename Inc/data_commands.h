@@ -14,7 +14,7 @@
 #include "sensors_defines.h"
 
 #define IN_BUFF_SIZE 40
-#define OUT_BUFF_SIZE 40
+#define OUT_BUFF_SIZE 53
 
 
 

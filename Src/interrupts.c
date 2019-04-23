@@ -100,10 +100,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 				HAL_I2C_Mem_Read_IT(&hi2c1, GYR_ADDRESS, GYR_OUTX_L_G, 1, ComData.measurements.gyroscopeData, GYR_DATAREGISTER_NUM);
 			} else if (ComData.msrSensLeft.barometer == true) {
 				ComData.msrSensLeft.barometer = false;
-				HAL_I2C_Mem_Read_IT(&hi2c1, BAR_ADDRESS, BAR_PRESS_OUT_XL, 1, ComData.measurements.barometerData, BAR_DATAREGISTER_NUM);
+				HAL_I2C_Mem_Read_IT(&hi2c1, BAR_ADDRESS, BAR_PRESS_OUT_XL | MULTIPLE_RW, 1, ComData.measurements.barometerData, BAR_DATAREGISTER_NUM);
 			} else if (ComData.msrSensLeft.magnetometer == true) {
 				ComData.msrSensLeft.magnetometer = false;
-				HAL_I2C_Mem_Read_IT(&hi2c1, MAG_ADDRESS, MAG_OUTX_L, 1, ComData.measurements.magnetometerData, MAG_DATAREGISTER_NUM);
+				HAL_I2C_Mem_Read_IT(&hi2c1, MAG_ADDRESS, MAG_OUTX_L | MULTIPLE_RW, 1, ComData.measurements.magnetometerData, MAG_DATAREGISTER_NUM);
 			}
 		}
 
@@ -126,18 +126,22 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 		HAL_I2C_Mem_Read_IT(&hi2c1, GYR_ADDRESS, GYR_OUTX_L_G, 1, ComData.measurements.gyroscopeData, GYR_DATAREGISTER_NUM);
 	} else if (ComData.msrSensLeft.barometer == true) {
 		ComData.msrSensLeft.barometer = false;
-		HAL_I2C_Mem_Read_IT(&hi2c1, BAR_ADDRESS, BAR_PRESS_OUT_XL, 1, ComData.measurements.barometerData, BAR_DATAREGISTER_NUM);
+		HAL_I2C_Mem_Read_IT(&hi2c1, BAR_ADDRESS, BAR_PRESS_OUT_XL | MULTIPLE_RW, 1, ComData.measurements.barometerData, BAR_DATAREGISTER_NUM);
 	} else if (ComData.msrSensLeft.magnetometer == true) {
 		ComData.msrSensLeft.magnetometer = false;
-		HAL_I2C_Mem_Read_IT(&hi2c1, MAG_ADDRESS, MAG_OUTX_L, 1, ComData.measurements.magnetometerData, MAG_DATAREGISTER_NUM);
+		HAL_I2C_Mem_Read_IT(&hi2c1, MAG_ADDRESS, MAG_OUTX_L | MULTIPLE_RW, 1, ComData.measurements.magnetometerData, MAG_DATAREGISTER_NUM);
 	} else {
 		--CmdPrt.mesures.measurments_num;
-		ListStr_Push_C(ComData.out_commands, "### msr: ###\n", 13);
 
-		uint8_t out[40];
+		uint8_t out[50];
 		uint8_t out_size;
+
+		//out_size = sprintf((char*)out, "### msr:%d ###\n", (UINT16_MAX - CmdPrt.mesures.measurments_num));
+		out_size = sprintf((char*)out, "### msr:%d ###\n", (CmdPrt.mesures.measurments_num));
+		ListStr_Push_C(ComData.out_commands, (char*)out, out_size);
+
 		int16_t work16;
-		//int32_t work32;
+		int32_t work32;
 		float measure_outputX;
 		float measure_outputY;
 		float measure_outputZ;
@@ -150,7 +154,7 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 			measure_outputY = ((float) work16 * 2.0) / (float) INT16_MAX;
 			work16 = ((ComData.measurements.accelerometrData[5] << 8) | ComData.measurements.accelerometrData[4]);
 			measure_outputZ = ((float) work16 * 2.0) / (float) INT16_MAX;
-			out_size = sprintf((char*)out, "acc: X:%.3f Y:%.3f Z:%.3f\n", measure_outputX, measure_outputY, measure_outputZ);
+			out_size = sprintf((char*)out, "acc: X:%+9.3f Y:%+9.3f Z:%+9.3f", measure_outputX, measure_outputY, measure_outputZ);
 			ListStr_Push_C(ComData.out_commands, (char*)out, out_size);
 		}
 		if(CmdPrt.active_sensors.gyroscope == true)
@@ -161,20 +165,26 @@ void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c)
 			measure_outputY = ((float) work16 * 245) / (float) INT16_MAX;
 			work16 = ((ComData.measurements.gyroscopeData[5] << 8) | ComData.measurements.gyroscopeData[4]);
 			measure_outputZ = ((float) work16 * 245) / (float) INT16_MAX;
-			out_size = sprintf((char*)out, "gyr: X:%.3f Y:%.3f Z:%.3f\n", measure_outputX, measure_outputY, measure_outputZ);
+			out_size = sprintf((char*)out, "gyr: X:%+9.3f Y:%+9.3f Z:%+9.3f\n", measure_outputX, measure_outputY, measure_outputZ);
 			ListStr_Push_C(ComData.out_commands, (char*)out, out_size);
 		}
 		if(CmdPrt.active_sensors.barometer == true)
 		{
-			//obliczenia
-			//sprintf((char*)out, "acc: X:%f Y:%f Z:%f\n%c", measure_outputX, measure_outputY, measure_outputZ, '\0');
-			//ListStr_Push_C(ComData.out_commands, (char*)out);
+			work32 = ((ComData.measurements.barometerData[2] << 16) | (ComData.measurements.barometerData[1] << 8) | (ComData.measurements.barometerData[0]));
+			measure_outputX = ((float) work32 / 4096);
+			out_size = sprintf((char*)out, "bar: X:%+12.6f \n", measure_outputX);
+			ListStr_Push_C(ComData.out_commands, (char*)out, out_size);
 		}
 		if(CmdPrt.active_sensors.magnetometer == true)
 		{
-			//obliczenia
-			//sprintf((char*)out, "acc: X:%f Y:%f Z:%f\n%c", measure_outputX, measure_outputY, measure_outputZ, '\0');
-			//ListStr_Push_C(ComData.out_commands, (char*)out);
+			work16 = ((ComData.measurements.magnetometerData[1] << 8) | ComData.measurements.magnetometerData[0]);
+			measure_outputX = ((float) work16 * 4.0) / (float) INT16_MAX;
+			work16 = ((ComData.measurements.magnetometerData[3] << 8) | ComData.measurements.magnetometerData[2]);
+			measure_outputY = ((float) work16 * 4.0) / (float) INT16_MAX;
+			work16 = ((ComData.measurements.magnetometerData[5] << 8) | ComData.measurements.magnetometerData[4]);
+			measure_outputZ = ((float) work16 * 4.0) / (float) INT16_MAX;
+			out_size = sprintf((char*)out, "mag: X:%+9.3f Y:%+9.3f Z:%+9.3f\n", measure_outputX, measure_outputY, measure_outputZ);
+			ListStr_Push_C(ComData.out_commands, (char*)out, out_size);
 		}
 		//dodac sprawdzenie czy nie ma alokacji pamieci za duzej
 	}

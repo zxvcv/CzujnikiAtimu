@@ -150,7 +150,18 @@ int main(void)
   //zyroskop
   settingsdev = GYR_104HZ_MASK;
   HAL_I2C_Mem_Write(&hi2c1, GYR_ADDRESS, GYR_CTRL2_G, 1, &settingsdev, 1, 1000);
-
+  //barometr
+  settingsdev = BAR_ACTIVE_MODE_MASK | BAR_1HZ_MASK | BAR_BDU_MASK;
+  HAL_I2C_Mem_Write(&hi2c1, BAR_ADDRESS, BAR_CTRL_REG1, 1, &settingsdev, 1, 1000);
+  //magnetometr
+  settingsdev = MAG_155HZ_MASK;
+  HAL_I2C_Mem_Write(&hi2c1, MAG_ADDRESS, MAG_CTRL_REG1, 1, &settingsdev, 1, 1000);
+  settingsdev = MAG_4G_MASK;
+  HAL_I2C_Mem_Write(&hi2c1, MAG_ADDRESS, MAG_CTRL_REG2, 1, &settingsdev, 1, 1000);
+  settingsdev = MAG_CONTINUOUS_MODE_MASK;
+  HAL_I2C_Mem_Write(&hi2c1, MAG_ADDRESS, MAG_CTRL_REG3, 1, &settingsdev, 1, 1000);
+  settingsdev = MAG_BDU_MASK;
+  HAL_I2C_Mem_Write(&hi2c1, MAG_ADDRESS, MAG_CTRL_REG5, 1, &settingsdev, 1, 1000);
 
   while (1)
   {
@@ -252,7 +263,7 @@ static void MX_I2C1_Init(void)
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x0000020B;
+  hi2c1.Init.Timing = 0x2000090E;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
